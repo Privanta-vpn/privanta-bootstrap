@@ -1,0 +1,90 @@
+name: mirror-signed-bootstrap
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: signed-bootstrap-mirror
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Fetch and verify signed bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+
+          for channel in primary recovery; do
+            case "$channel" in
+              primary) origin="https://cfg-stg.privanta.ai" ;;
+              recovery) origin="https://cfg-stg.privanta.uk" ;;
+            esac
+            curl --fail --show-error --silent --proto '=https' --tlsv1.2 \
+              --max-time 30 "$origin/v1/bootstrap" \
+              --output "$work/$channel.bootstrap"
+            curl --fail --show-error --silent --proto '=https' --tlsv1.2 \
+              --max-time 30 "$origin/v1/bootstrap.sig" \
+              --output "$work/$channel.bootstrap.sig"
+          done
+
+          cmp "$work/primary.bootstrap" "$work/recovery.bootstrap"
+          cmp "$work/primary.bootstrap.sig" "$work/recovery.bootstrap.sig"
+          jq -e '
+            .schema_version == 1 and
+            (.revision | type == "number") and
+            (.issued_at | type == "string") and
+            (.expires_at | type == "string") and
+            (.minimum_client_versions | type == "object") and
+            (.config_endpoints | type == "array") and
+            (.delegated_signing_keys | type == "array")
+          ' "$work/primary.bootstrap" >/dev/null
+          jq -er '
+            select(.algorithm == "ed25519") | .signature
+          ' "$work/primary.bootstrap.sig" | base64 --decode >"$work/signature.bin"
+          openssl pkeyutl -verify -pubin \
+            -inkey bootstrap-root-public.pem -rawin \
+            -in "$work/primary.bootstrap" \
+            -sigfile "$work/signature.bin"
+
+          expires_at="$(jq -r .expires_at "$work/primary.bootstrap")"
+          expires_epoch="$(date -u -d "$expires_at" +%s)"
+          minimum_epoch="$(( $(date -u +%s) + 14 * 24 * 60 * 60 ))"
+          test "$expires_epoch" -ge "$minimum_epoch"
+
+          incoming_revision="$(jq -r .revision "$work/primary.bootstrap")"
+          if [[ -f v1/bootstrap ]]; then
+            current_revision="$(jq -r .revision v1/bootstrap)"
+            test "$incoming_revision" -ge "$current_revision"
+            if [[ "$incoming_revision" == "$current_revision" ]]; then
+              cmp v1/bootstrap "$work/primary.bootstrap"
+              cmp v1/bootstrap.sig "$work/primary.bootstrap.sig"
+            fi
+          fi
+
+          install -d -m 0755 v1
+          install -m 0644 "$work/primary.bootstrap" v1/bootstrap
+          install -m 0644 "$work/primary.bootstrap.sig" v1/bootstrap.sig
+      - name: Commit a verified revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- v1/bootstrap v1/bootstrap.sig; then
+            exit 0
+          fi
+          revision="$(jq -r .revision v1/bootstrap)"
+          git config user.name "privanta-bootstrap-bot"
+          git config user.email "bootstrap-bot@users.noreply.github.com"
+          git add v1/bootstrap v1/bootstrap.sig
+          git commit -m "mirror: publish signed bootstrap revision $revision"
+          git push origin HEAD:main
