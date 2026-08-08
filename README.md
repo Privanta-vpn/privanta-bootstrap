@@ -11,12 +11,18 @@ is rejected locally.
 
 The mirror workflow accepts an update only when the primary and recovery
 origins are byte-identical, the detached root signature verifies, the revision
-does not decrease, and the manifest retains at least 14 days of validity.
+does not decrease, and the manifest retains at least 14 days of validity. Each
+accepted revision is also written once under `revisions/<revision>/`; a later
+workflow run must reproduce those bytes exactly and cannot overwrite history.
 
 Public endpoints:
 
 * `https://raw.githubusercontent.com/Privanta-vpn/privanta-bootstrap/main/v1/bootstrap`
 * `https://raw.githubusercontent.com/Privanta-vpn/privanta-bootstrap/main/v1/bootstrap.sig`
+
+Immutable revision example:
+
+* `https://raw.githubusercontent.com/Privanta-vpn/privanta-bootstrap/main/revisions/4/bootstrap`
 
 No credentials, device identifiers, customer data, traffic data, or private
 keys belong in this repository.

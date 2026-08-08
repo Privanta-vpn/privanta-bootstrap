@@ -63,6 +63,22 @@ jobs:
           test "$expires_epoch" -ge "$minimum_epoch"
 
           incoming_revision="$(jq -r .revision "$work/primary.bootstrap")"
+          revision_directory="revisions/$incoming_revision"
+          if [[ -e "$revision_directory/bootstrap" || \
+            -e "$revision_directory/bootstrap.sig" ]]; then
+            test -f "$revision_directory/bootstrap"
+            test -f "$revision_directory/bootstrap.sig"
+            cmp "$revision_directory/bootstrap" "$work/primary.bootstrap"
+            cmp "$revision_directory/bootstrap.sig" \
+              "$work/primary.bootstrap.sig"
+          else
+            install -d -m 0755 "$revision_directory"
+            install -m 0644 "$work/primary.bootstrap" \
+              "$revision_directory/bootstrap"
+            install -m 0644 "$work/primary.bootstrap.sig" \
+              "$revision_directory/bootstrap.sig"
+          fi
+
           if [[ -f v1/bootstrap ]]; then
             current_revision="$(jq -r .revision v1/bootstrap)"
             test "$incoming_revision" -ge "$current_revision"
@@ -79,12 +95,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- v1/bootstrap v1/bootstrap.sig; then
+          if git diff --quiet -- v1/bootstrap v1/bootstrap.sig revisions; then
             exit 0
           fi
           revision="$(jq -r .revision v1/bootstrap)"
           git config user.name "privanta-bootstrap-bot"
           git config user.email "bootstrap-bot@users.noreply.github.com"
-          git add v1/bootstrap v1/bootstrap.sig
+          git add v1/bootstrap v1/bootstrap.sig revisions
           git commit -m "mirror: publish signed bootstrap revision $revision"
           git push origin HEAD:main
