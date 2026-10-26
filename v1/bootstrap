@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "revision": 5,
-  "issued_at": "2026-10-25T19:54:25Z",
+  "revision": 6,
+  "issued_at": "2026-10-26T01:21:34Z",
   "expires_at": "2027-01-23T19:54:25Z",
   "minimum_client_versions": {
     "ios": "0.1.0",
@@ -18,6 +18,10 @@
     {
       "url": "https://cfg-stg.privanta.uk/v1/config",
       "priority": 20
+    },
+    {
+      "url": "https://46-173-214-4.sslip.io/v1/config",
+      "priority": 30
     }
   ],
   "delegated_signing_keys": [
