@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "revision": 7,
+  "issued_at": "2026-10-26T01:21:34Z",
+  "expires_at": "2027-01-23T19:54:25Z",
+  "minimum_client_versions": {
+    "ios": "0.1.0",
+    "android": "0.1.0",
+    "android-tv": "0.1.0",
+    "windows": "0.1.0",
+    "macos": "0.1.0"
+  },
+  "config_endpoints": [
+    {
+      "url": "https://cfg-stg.privanta.ai/v1/config",
+      "priority": 10
+    },
+    {
+      "url": "https://cfg-stg.privanta.uk/v1/config",
+      "priority": 20
+    }
+  ],
+  "delegated_signing_keys": [
+    {
+      "key_id": "main-online-1",
+      "algorithm": "ed25519",
+      "public_key": "MCowBQYDK2VwAyEANNOmz88VR7rhLzlTUgWIm0yEB833tnW2e0fIfQTapaI=",
+      "not_before": "2026-07-29T12:23:30Z",
+      "not_after": "2027-02-22T19:54:25Z",
+      "revoked": false
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "key_id": "main-root-1",
   "algorithm": "ed25519",
-  "signature": "PFmj1ZM5tyPX3BAPaECBmdxvClM1JczaWIc2G6e8kYyFPL1YeIrXBPJRm3P79223cvZ+IirUKhyITwGhZeyNAg==",
-  "signed_at": "2026-10-26T01:22:40Z"
+  "signature": "lc4vbRt9LO+gdJIxM3GIHlMyLFAQD6KdGHVdCAE8n3rVp0mWHrRSUOJpgUE4f57pwkkXZuYc5w7ZxRTLgWofCw==",
+  "signed_at": "2026-10-26T11:50:37Z"
 }
